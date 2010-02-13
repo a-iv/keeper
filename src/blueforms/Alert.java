@@ -18,13 +18,8 @@ public class Alert extends TimerTask{
 			this.cancel();
 			Manager.playTone(ToneControl.C4 + 16, 100, 100);
 			Manager.playTone(ToneControl.C4 + 11, 100, 100);
-			Manager.playTone(ToneControl.C4 + 16, 100, 100);
-			Manager.playTone(ToneControl.C4 + 11, 100, 100);
-			Manager.playTone(ToneControl.C4 + 16, 100, 100);
-			Manager.playTone(ToneControl.C4 + 11, 100, 100);
 			client.fail();
 		} catch (MediaException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
