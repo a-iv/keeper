@@ -198,7 +198,13 @@ public class Client extends MIDlet implements CommandListener{
 		return false;
 	}
 	
-	// Функция, описывающая поиск устройств
+	public void ShowError(String error) {
+		
+	}
+	
+	/**
+	 * Функция, описывающая поиск устройств
+	 */
 	public void hardSearchFunction() {
 		display.setCurrent(hardSearch);
 		hardSearch.removeCommand(repeatCommand);
@@ -224,10 +230,11 @@ public class Client extends MIDlet implements CommandListener{
 				try {
 					listener.wait();
 				} catch (Exception e) {
+					ShowError(e.toString());
 				}
 			}
 		} catch (BluetoothStateException e) {
-			e.printStackTrace();
+			ShowError(e.toString());
 		}
 	}
 	
@@ -236,6 +243,9 @@ public class Client extends MIDlet implements CommandListener{
 		timer.schedule(task, 1000);
 	}
 	
+	/**
+	 * lkdjglkdflgkjdflkgdlfjgl
+	 */
 	public void check() {
 		int[] args = null;
 		UUID[] services = new UUID[1];
@@ -259,6 +269,7 @@ public class Client extends MIDlet implements CommandListener{
 			try {
 				listener.wait();
 			} catch (Exception e) {
+				ShowError(e.toString());
 			}
 		}
 		// hardStatic.append("Дождались завершения");
@@ -268,6 +279,14 @@ public class Client extends MIDlet implements CommandListener{
 			alert = new Alert(this);
 			timer.schedule(alert, 100);
 		}
+	
+	public void enterChangePass() {
+		passwordError.setText("");
+		enterOldChangePwd.setString("");
+		enterNewChangePwd.setString("");
+		repeatNewChangePwd.setString("");
+		display.setCurrent(passChange);
+	}
 	
 	public void comparePass() {
 		// Сравниваем пароли
@@ -354,11 +373,7 @@ public class Client extends MIDlet implements CommandListener{
 			// Смена пароля
 			if (c == passCommand) {
 				changeForm = false;
-				passwordError.setText("");
-				enterOldChangePwd.setString("");
-				enterNewChangePwd.setString("");
-				repeatNewChangePwd.setString("");
-				display.setCurrent(passChange);
+				enterChangePass();
 			}
 		}
 		// hardStatic
@@ -377,11 +392,7 @@ public class Client extends MIDlet implements CommandListener{
 			hardStatic.deleteAll();
 			if (c == passCommand) {
 				changeForm = true;
-				passwordError.setText("");
-				enterOldChangePwd.setString("");
-				enterNewChangePwd.setString("");
-				repeatNewChangePwd.setString("");
-				display.setCurrent(passChange);
+				enterChangePass();
 			}
 		}
 		// passChange
@@ -398,7 +409,11 @@ public class Client extends MIDlet implements CommandListener{
 			}
 			// Отмена
 			if (c == cancCommand) {
-				display.setCurrent(hardStatic);
+				if (changeForm){
+					display.setCurrent(hardAbsence);
+				} else{
+					display.setCurrent(hardSearch);
+				}
 			}
 		}
 		// hardAlert
@@ -406,7 +421,9 @@ public class Client extends MIDlet implements CommandListener{
 			if (c == OKCommand) {
 				if (enterAlert.getString().equals(password)) {
 					display.setCurrent(hardAbsence);
+					timer.cancel();
 					enterAlert.setString("");
+					passwordErrorAlert.setText("");
 				} else {
 					passwordErrorAlert.setText("Неверный пароль");
 				}
