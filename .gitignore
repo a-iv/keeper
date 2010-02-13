@@ -1,0 +1,9 @@
+*.orig
+.svn/
+.settings/
+.mtj.tmp
+.mtj
+build.properties
+bin/
+deployed/
+docs/

@@ -1,0 +1,7 @@
+MIDlet-Version: 1.0.0
+MIDlet-Vendor: Cherepanov Yaroslav
+MIDlet-Jar-URL: keeper.jar
+MicroEdition-Configuration: CLDC-1.0
+MIDlet-1: Client,,blueforms.Client
+MicroEdition-Profile: MIDP-1.0
+MIDlet-Name: Keeper MIDlet
