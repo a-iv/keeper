@@ -19,8 +19,7 @@ public class Client extends MIDlet implements CommandListener{
 	 * bluetooth
 	 */
 	DiscoveryAgent agent;
-	RemoteDevice[] remoteDevicesFounded;
-	int bluetoothDevicesFonuded;
+	Vector remoteDevicesFounded = new Vector();
 	RemoteDevice btDev;
 	Search listener;
 	Timer timer = new Timer(); // Переменная таймера
@@ -209,8 +208,7 @@ public class Client extends MIDlet implements CommandListener{
 		display.setCurrent(hardSearch);
 		hardSearch.removeCommand(repeatCommand);
 		hardSearch.removeCommand(OKCommand);
-		bluetoothDevicesFonuded = 0;
-		remoteDevicesFounded = new RemoteDevice[32];
+		remoteDevicesFounded.removeAllElements();
 		/*
 		 * BlueSearcher searcher = new BlueSearcher(); 
 		 * searcher.start();
@@ -352,7 +350,7 @@ public class Client extends MIDlet implements CommandListener{
 			// OK (В данном случае эта кнопка отвечает за подключение к
 			// устройству)
 			if (c == OKCommand) {
-				btDev = remoteDevicesFounded[hardSearch.getSelectedIndex()];
+				btDev = (RemoteDevice) remoteDevicesFounded.elementAt(hardSearch.getSelectedIndex());
 				// hardStatic.append("Всего устройств: " + String.valueOf(bluetoothDevicesFonuded) + ", выбрано № " + String.valueOf(hardSearch.getSelectedIndex()));
 				try {
 					hardStatic.append("Соединение с устройством " + btDev.getFriendlyName(false) + " установлено");

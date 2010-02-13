@@ -20,15 +20,14 @@ public class Search implements DiscoveryListener {
 		try {
 			frendlyNameDevice = btDevice.getFriendlyName(true);
 			client.hardSearch.append(frendlyNameDevice, null);
-			client.remoteDevicesFounded[client.bluetoothDevicesFonuded] = btDevice;
-			client.bluetoothDevicesFonuded++;
+			client.remoteDevicesFounded.addElement(btDevice);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
 	public void inquiryCompleted(int discType) {
-		if (client.bluetoothDevicesFonuded == 0) {
+		if (client.remoteDevicesFounded.isEmpty()) {
 			client.hardSearch.append("Устройств не найдено", null);
 		} else {
 			client.hardSearch.addCommand(client.OKCommand);
