@@ -1,6 +1,10 @@
 package blueforms;
 
 import javax.microedition.lcdui.*;
+import javax.microedition.media.Manager;
+import javax.microedition.media.MediaException;
+import javax.microedition.media.Player;
+import javax.microedition.media.control.ToneControl;
 import javax.microedition.midlet.*;
 import javax.microedition.rms.*;
 
@@ -22,9 +26,8 @@ public class Client extends MIDlet implements CommandListener{
 	Vector remoteDevicesFounded = new Vector();
 	RemoteDevice btDev;
 	Search listener;
-	Timer timer = new Timer(); // Переменная таймера
-	TimerTask task; // Задание для таймера
-	TimerTask alert; // Задание для таймера 
+	Timer monitorTimer = new Timer(); // Переменная таймера для мониторинга
+	Task monitorTask; // Задание для таймера 
 	
 	/*
 	 * Интерфейс
@@ -54,7 +57,25 @@ public class Client extends MIDlet implements CommandListener{
 	StringItem hardStaticMessage = new StringItem("", ""); // Сообщение при соединении с устройством
 	StringItem passwordErrorAlert = new StringItem("", "");
 	boolean changeForm;
-
+	boolean stop; // Остановка сирены
+	byte[] NOTS={
+			ToneControl.VERSION, 1,
+			ToneControl.TEMPO, 30,
+			ToneControl.BLOCK_START, 0,
+			ToneControl.C4 + 16, 2,
+			ToneControl.C4 + 11, 2,
+			ToneControl.C4 + 16, 2,
+			ToneControl.C4 + 11, 2,
+			ToneControl.C4 + 16, 2,
+			ToneControl.C4 + 11, 2,
+			ToneControl.C4 + 16, 2,
+			ToneControl.C4 + 11, 2,
+			ToneControl.C4 + 16, 2,
+			ToneControl.C4 + 11, 2,
+			ToneControl.BLOCK_END, 0, 
+			ToneControl.PLAY_BLOCK, 0};
+	Player player;
+	
 	// Обьявление полей ввода
 	TextField enterSetPwd = new TextField("Введите пароль", "", 50,
 			TextField.PASSWORD);
@@ -105,7 +126,7 @@ public class Client extends MIDlet implements CommandListener{
 			hardStatic.append("Невозможно подключиться к bluetooth устройству");
 		}
 		listener = new Search(this);
-
+		
 		// Установка пароля, стартовое окно(только в первый раз)
 		setPwd.append(enterSetPwd);
 		setPwd.append(repeatSetPwd);
@@ -153,7 +174,7 @@ public class Client extends MIDlet implements CommandListener{
 
 		// ------------------------------------------------------------------
 
-		// Открытие RecordStore
+		/*// Открытие RecordStore
 		try {
 			recordStore = RecordStore.openRecordStore(recordStoreName, false);
 		} catch (RecordStoreNotFoundException e) {
@@ -171,7 +192,11 @@ public class Client extends MIDlet implements CommandListener{
 		if (getPassword())
 			hardSearchFunction();
 		else
-			display.setCurrent(setPwd);
+			display.setCurrent(setPwd);*/
+		password = "1";
+		display.setCurrent(hardAlert);
+		stop = false;
+		fail();
 	}
 	
 	public boolean getPassword() {
@@ -237,8 +262,8 @@ public class Client extends MIDlet implements CommandListener{
 	}
 	
 	public void monitor() {
-		task = new Task(this);
-		timer.schedule(task, 1000);
+		monitorTask = new Task(this);
+		monitorTimer.schedule(monitorTask, 1000);
 	}
 	
 	/**
@@ -274,8 +299,16 @@ public class Client extends MIDlet implements CommandListener{
 	}
 	
 	public void fail() {
-			alert = new Alert(this);
-			timer.schedule(alert, 100);
+		try {
+			player = Manager.createPlayer(Manager.TONE_DEVICE_LOCATOR);
+			player.realize();
+			ToneControl tcl=(ToneControl)player.getControl("ToneControl");
+			tcl.setSequence(NOTS);
+			player.setLoopCount(-1);
+			player.start();
+		} catch (IOException e) {
+		} catch (MediaException e) {
+		}		
 		}
 	
 	public void enterChangePass() {
@@ -418,10 +451,14 @@ public class Client extends MIDlet implements CommandListener{
 		else if (display.getCurrent() == hardAlert) {
 			if (c == OKCommand) {
 				if (enterAlert.getString().equals(password)) {
-					display.setCurrent(hardAbsence);
-					timer.cancel();
+					try {
+						player.stop();
+					} catch (MediaException e) {
+						e.printStackTrace();
+					}
 					enterAlert.setString("");
 					passwordErrorAlert.setText("");
+					display.setCurrent(hardAbsence);
 				} else {
 					passwordErrorAlert.setText("Неверный пароль");
 				}
