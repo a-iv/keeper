@@ -15,7 +15,6 @@ import javax.bluetooth.BluetoothStateException;
 import javax.bluetooth.DiscoveryAgent;
 import javax.bluetooth.LocalDevice;
 import javax.bluetooth.RemoteDevice;
-import javax.bluetooth.UUID;
 
 public class Client extends MIDlet implements CommandListener {
 
@@ -59,6 +58,7 @@ public class Client extends MIDlet implements CommandListener {
 															// устройством
 	StringItem passwordErrorAlert = new StringItem("", "");
 	boolean changeForm;
+	boolean stop;
 	byte[] NOTS = { ToneControl.VERSION, 1, ToneControl.TEMPO, 30,
 			ToneControl.BLOCK_START, 0, ToneControl.C4 + 16, 2,
 			ToneControl.C4 + 11, 2, ToneControl.C4 + 16, 2,
@@ -235,36 +235,11 @@ public class Client extends MIDlet implements CommandListener {
 	}
 
 	public void monitor() {
-		monitorTask = new MonitorTask(this);
-		monitorTimer.schedule(monitorTask, 100);
-	}
-
-	/**
-	 * 
-	 */
-	public void check() {
-		int[] args = null;
-		UUID[] services = new UUID[1];
-		services[0] = new UUID(0x0001);
-		/*
-		 * services[0] = new UUID("0100", false); services[1] = new UUID("111f",
-		 * false); services[2] = new UUID("1108", false); services[3] = new
-		 * UUID("0003", false); services[4] = new UUID("0008", false);
-		 * services[5] = new UUID("1101", false); services[6] = new UUID("0001",
-		 * false);
-		 */
-		try {
-			agent.searchServices(args, services, btDev, listener);
-		} catch (BluetoothStateException e) {
-			ShowError("Ошибка при запуске мониторинга");
-		}
-		synchronized (listener) {
-			try {
-				listener.wait();
-			} catch (Exception e) {
-				ShowError(e.toString());
-			}
-		}
+		if (!stop){
+			monitorTask = new MonitorTask(this);
+			monitorTimer.schedule(monitorTask, 100);
+		} else
+			display.setCurrent(hardAbsence);
 	}
 
 	public void fail() {
@@ -277,7 +252,9 @@ public class Client extends MIDlet implements CommandListener {
 			player.setLoopCount(-1);
 			player.start();
 		} catch (IOException e) {
+			ShowError(e.toString());
 		} catch (MediaException e) {
+			ShowError(e.toString());
 		}
 	}
 
@@ -362,6 +339,7 @@ public class Client extends MIDlet implements CommandListener {
 				hardStatic.deleteAll();
 				hardStatic.append("Соединение с устройством " + name + " установлено");
 				display.setCurrent(hardStatic);
+				stop = false;
 				monitor();
 			}
 			// Повтор поиска устройств
@@ -378,10 +356,7 @@ public class Client extends MIDlet implements CommandListener {
 		else if (display.getCurrent() == hardStatic) {
 			// Разрыв соединения
 			if (c == breakCommand) {
-				// TODO: завести переменную stop
-				monitorTask.cancel();
-				// TODO: перенести
-				display.setCurrent(hardAbsence);
+				stop = true;
 			}
 		}
 

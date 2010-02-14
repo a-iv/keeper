@@ -54,13 +54,6 @@ public class Search implements DiscoveryListener {
 			client.hardAlert.append("Не найдено: " + String.valueOf(respCode));
 			client.fail();
 		}
-		// TODO: Убрать синхронизацию
-		synchronized (this) {
-			try {
-				this.notifyAll();
-			} catch (Exception e) {
-			}
-		}
 	}
 }
 
