@@ -48,12 +48,17 @@ public class Search implements DiscoveryListener {
 				|| respCode == SERVICE_SEARCH_NO_RECORDS
 				|| respCode == SERVICE_SEARCH_TERMINATED) {
 		//if (bluetoothSavedFounded) {
+			if (client.isFail) {
+				client.failOff();
+			}
 			client.hardStatic.append("Окончен: " + String.valueOf(respCode));
-			client.monitor();
 		} else {
 			client.hardAlert.append("Не найдено: " + String.valueOf(respCode));
-			client.fail();
+			if (!client.isFail){
+				client.failOn();
+			}
 		}
+		client.monitor();
 	}
 }
 

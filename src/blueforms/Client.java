@@ -68,6 +68,7 @@ public class Client extends MIDlet implements CommandListener {
 			ToneControl.C4 + 11, 2, ToneControl.BLOCK_END, 0,
 			ToneControl.PLAY_BLOCK, 0 };
 	Player player;
+	boolean isFail;
 
 	// Обьявление полей ввода
 	TextField enterSetPwd = new TextField("Введите пароль", "", 50,
@@ -155,6 +156,7 @@ public class Client extends MIDlet implements CommandListener {
 		hardAlert.addCommand(OKCommand);
 		hardAlert.setCommandListener(this);
 
+		isFail = false;
 		// ------------------------------------------------------------------
 
 		try {
@@ -242,7 +244,8 @@ public class Client extends MIDlet implements CommandListener {
 			display.setCurrent(hardAbsence);
 	}
 
-	public void fail() {
+	public void failOn() {
+		isFail = true;
 		display.setCurrent(hardAlert);
 		try {
 			player = Manager.createPlayer(Manager.TONE_DEVICE_LOCATOR);
@@ -253,6 +256,16 @@ public class Client extends MIDlet implements CommandListener {
 			player.start();
 		} catch (IOException e) {
 			ShowError(e.toString());
+		} catch (MediaException e) {
+			ShowError(e.toString());
+		}
+	}
+	
+	public void failOff() {
+		isFail = false;
+		display.setCurrent(hardStatic);
+		try {
+			player.stop();
 		} catch (MediaException e) {
 			ShowError(e.toString());
 		}
@@ -395,11 +408,7 @@ public class Client extends MIDlet implements CommandListener {
 		else if (display.getCurrent() == hardAlert) {
 			if (c == OKCommand) {
 				if (enterAlert.getString().equals(password)) {
-					try {
-						player.stop();
-					} catch (MediaException e) {
-						e.printStackTrace();
-					}
+					failOff();
 					enterAlert.setString("");
 					passwordErrorAlert.setText("");
 					display.setCurrent(hardAbsence);
