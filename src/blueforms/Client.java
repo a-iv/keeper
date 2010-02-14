@@ -17,8 +17,8 @@ import javax.bluetooth.LocalDevice;
 import javax.bluetooth.RemoteDevice;
 import javax.bluetooth.UUID;
 
-public class Client extends MIDlet implements CommandListener{
-	
+public class Client extends MIDlet implements CommandListener {
+
 	/*
 	 * bluetooth
 	 */
@@ -27,8 +27,8 @@ public class Client extends MIDlet implements CommandListener{
 	RemoteDevice btDev;
 	Search listener;
 	Timer monitorTimer = new Timer(); // Переменная таймера для мониторинга
-	Task monitorTask; // Задание для таймера 
-	
+	MonitorTask monitorTask; // Задание для таймера
+
 	/*
 	 * Интерфейс
 	 */
@@ -49,33 +49,26 @@ public class Client extends MIDlet implements CommandListener{
 	String password; // Пароль
 	RecordStore recordStore = null; // Пароль
 	StringItem passwordError = new StringItem("", ""); // Ошибка при
-														// неправильном вводе
-														// пароля(passChange)
+	// неправильном вводе
+	// пароля(passChange)
 	StringItem passwordError1 = new StringItem("", ""); // Ошибка при
-														// неправильном вводе
-														// пароля(setPwd)
-	StringItem hardStaticMessage = new StringItem("", ""); // Сообщение при соединении с устройством
+	// неправильном вводе
+	// пароля(setPwd)
+	StringItem hardStaticMessage = new StringItem("", ""); // Сообщение при
+															// соединении с
+															// устройством
 	StringItem passwordErrorAlert = new StringItem("", "");
 	boolean changeForm;
-	boolean stop; // Остановка сирены
-	byte[] NOTS={
-			ToneControl.VERSION, 1,
-			ToneControl.TEMPO, 30,
-			ToneControl.BLOCK_START, 0,
-			ToneControl.C4 + 16, 2,
-			ToneControl.C4 + 11, 2,
-			ToneControl.C4 + 16, 2,
-			ToneControl.C4 + 11, 2,
-			ToneControl.C4 + 16, 2,
-			ToneControl.C4 + 11, 2,
-			ToneControl.C4 + 16, 2,
-			ToneControl.C4 + 11, 2,
-			ToneControl.C4 + 16, 2,
-			ToneControl.C4 + 11, 2,
-			ToneControl.BLOCK_END, 0, 
-			ToneControl.PLAY_BLOCK, 0};
+	byte[] NOTS = { ToneControl.VERSION, 1, ToneControl.TEMPO, 30,
+			ToneControl.BLOCK_START, 0, ToneControl.C4 + 16, 2,
+			ToneControl.C4 + 11, 2, ToneControl.C4 + 16, 2,
+			ToneControl.C4 + 11, 2, ToneControl.C4 + 16, 2,
+			ToneControl.C4 + 11, 2, ToneControl.C4 + 16, 2,
+			ToneControl.C4 + 11, 2, ToneControl.C4 + 16, 2,
+			ToneControl.C4 + 11, 2, ToneControl.BLOCK_END, 0,
+			ToneControl.PLAY_BLOCK, 0 };
 	Player player;
-	
+
 	// Обьявление полей ввода
 	TextField enterSetPwd = new TextField("Введите пароль", "", 50,
 			TextField.PASSWORD);
@@ -117,16 +110,7 @@ public class Client extends MIDlet implements CommandListener{
 
 	protected void startApp() throws MIDletStateChangeException {
 		display = Display.getDisplay(this);
-		
-		try {
-			LocalDevice localDevice = LocalDevice.getLocalDevice();
-			agent = localDevice.getDiscoveryAgent();
-		} 
-		catch (BluetoothStateException e) {
-			hardStatic.append("Невозможно подключиться к bluetooth устройству");
-		}
-		listener = new Search(this);
-		
+
 		// Установка пароля, стартовое окно(только в первый раз)
 		setPwd.append(enterSetPwd);
 		setPwd.append(repeatSetPwd);
@@ -138,7 +122,6 @@ public class Client extends MIDlet implements CommandListener{
 		// Поиск устойств
 		hardSearch.addCommand(exitCommand);
 		hardSearch.setCommandListener(this);
-
 
 		// Соединение установлено(основная форма)
 		hardStatic.addCommand(exitCommand);
@@ -153,8 +136,8 @@ public class Client extends MIDlet implements CommandListener{
 		hardAbsence.setCommandListener(this);
 
 		// Установка соединения не удалась
-		hardError.append("Соединение не удалось, повторите поиск");
-		hardError.addCommand(refrCommand);
+		hardError.append("Bluetooth не найден");
+		hardError.addCommand(exitCommand);
 		hardError.setCommandListener(this);
 
 		// Смена пароля
@@ -174,13 +157,23 @@ public class Client extends MIDlet implements CommandListener{
 
 		// ------------------------------------------------------------------
 
-		/*// Открытие RecordStore
+		try {
+			LocalDevice localDevice = LocalDevice.getLocalDevice();
+			agent = localDevice.getDiscoveryAgent();
+		} catch (BluetoothStateException e) {
+			display.setCurrent(hardError);
+			return;
+		}
+		listener = new Search(this);
+
+		// Открытие RecordStore
 		try {
 			recordStore = RecordStore.openRecordStore(recordStoreName, false);
 		} catch (RecordStoreNotFoundException e) {
 			// не существует RS
 			try {
-				recordStore = RecordStore.openRecordStore(recordStoreName, true);
+				recordStore = RecordStore
+						.openRecordStore(recordStoreName, true);
 			} catch (RecordStoreNotFoundException e2) {
 				// не существует RS
 			} catch (RecordStoreException e2) {
@@ -192,13 +185,9 @@ public class Client extends MIDlet implements CommandListener{
 		if (getPassword())
 			hardSearchFunction();
 		else
-			display.setCurrent(setPwd);*/
-		password = "1";
-		display.setCurrent(hardAlert);
-		stop = false;
-		fail();
+			display.setCurrent(setPwd);
 	}
-	
+
 	public boolean getPassword() {
 		// Считываем пароль из RS
 		pwdbyte = null;
@@ -221,73 +210,54 @@ public class Client extends MIDlet implements CommandListener{
 		}
 		return false;
 	}
-	
+
 	public void ShowError(String error) {
-		
+		Alert alert = new Alert(error);
+		alert.setTimeout(2000);
+		display.setCurrent(alert);
 	}
-	
+
 	/**
 	 * Функция, описывающая поиск устройств
 	 */
 	public void hardSearchFunction() {
-		display.setCurrent(hardSearch);
+		hardSearch.deleteAll();
 		hardSearch.removeCommand(repeatCommand);
+		hardSearch.removeCommand(passCommand);
 		hardSearch.removeCommand(OKCommand);
 		remoteDevicesFounded.removeAllElements();
-		/*
-		 * BlueSearcher searcher = new BlueSearcher(); 
-		 * searcher.start();
-		 * String[] str_srv = searcher.getServices(); 
-		 * if (str_srv==null) {
-		 * hardSearchMessage.setText("Устройств не найдено");
-		 * hardSearch.addCommand(repeatCommand);
-		 * } else { for (int i = 0; i < str_srv.length; i++) { 
-		 * hardChoise.append(str_srv[i], null); 
-		 * }
-		 * display.setCurrent(hardChoise); 
-		 * }
-		 */
+		display.setCurrent(hardSearch);
 		try {
 			agent.startInquiry(DiscoveryAgent.GIAC, listener);
-			synchronized (listener) {
-				try {
-					listener.wait();
-				} catch (Exception e) {
-					ShowError(e.toString());
-				}
-			}
 		} catch (BluetoothStateException e) {
 			ShowError(e.toString());
 		}
 	}
-	
+
 	public void monitor() {
-		monitorTask = new Task(this);
-		monitorTimer.schedule(monitorTask, 1000);
+		monitorTask = new MonitorTask(this);
+		monitorTimer.schedule(monitorTask, 100);
 	}
-	
+
 	/**
-	 * lkdjglkdflgkjdflkgdlfjgl
+	 * 
 	 */
 	public void check() {
 		int[] args = null;
 		UUID[] services = new UUID[1];
 		services[0] = new UUID(0x0001);
-/*		services[0] = new UUID("0100", false);
-		services[1] = new UUID("111f", false);
-		services[2] = new UUID("1108", false);
-		services[3] = new UUID("0003", false);
-		services[4] = new UUID("0008", false);
-		services[5] = new UUID("1101", false);
-		services[6] = new UUID("0001", false);
-		*/
+		/*
+		 * services[0] = new UUID("0100", false); services[1] = new UUID("111f",
+		 * false); services[2] = new UUID("1108", false); services[3] = new
+		 * UUID("0003", false); services[4] = new UUID("0008", false);
+		 * services[5] = new UUID("1101", false); services[6] = new UUID("0001",
+		 * false);
+		 */
 		try {
 			agent.searchServices(args, services, btDev, listener);
 		} catch (BluetoothStateException e) {
-			hardStatic.append("Ошибка при запуске мониторинга");
-			e.printStackTrace();
+			ShowError("Ошибка при запуске мониторинга");
 		}
-		// hardStatic.append("Поиск запущен");
 		synchronized (listener) {
 			try {
 				listener.wait();
@@ -295,22 +265,22 @@ public class Client extends MIDlet implements CommandListener{
 				ShowError(e.toString());
 			}
 		}
-		// hardStatic.append("Дождались завершения");
 	}
-	
+
 	public void fail() {
+		display.setCurrent(hardAlert);
 		try {
 			player = Manager.createPlayer(Manager.TONE_DEVICE_LOCATOR);
 			player.realize();
-			ToneControl tcl=(ToneControl)player.getControl("ToneControl");
+			ToneControl tcl = (ToneControl) player.getControl("ToneControl");
 			tcl.setSequence(NOTS);
 			player.setLoopCount(-1);
 			player.start();
 		} catch (IOException e) {
 		} catch (MediaException e) {
-		}		
 		}
-	
+	}
+
 	public void enterChangePass() {
 		passwordError.setText("");
 		enterOldChangePwd.setString("");
@@ -318,7 +288,7 @@ public class Client extends MIDlet implements CommandListener{
 		repeatNewChangePwd.setString("");
 		display.setCurrent(passChange);
 	}
-	
+
 	public void comparePass() {
 		// Сравниваем пароли
 		if (enterOldChangePwd.getString().equals(password)
@@ -343,8 +313,8 @@ public class Client extends MIDlet implements CommandListener{
 			passwordError.setText("Неправильно! Повторите попытку.");
 		}
 	}
-	
-	////////////////////////////////////////
+
+	// //////////////////////////////////////
 	public void commandAction(Command c, Displayable d) {
 		// Описание команд
 		// setPwd
@@ -355,8 +325,7 @@ public class Client extends MIDlet implements CommandListener{
 					password = enterSetPwd.getString();
 					enterSetPwd.setString("");
 					repeatSetPwd.setString("");
-					// ------------------Запись пароля в
-					// RecordStore-------------------
+					// Запись пароля в RecordStore
 					// Переводим pass в byte
 					pwdbyte = password.getBytes();
 					// Записываем пароль в RS
@@ -373,32 +342,30 @@ public class Client extends MIDlet implements CommandListener{
 					hardSearchFunction();
 				} else {
 					passwordError1.setText("Неправильно! Повторите попытку.");
-
 				}
 			}
 		}
 
 		// hardSearch
 		else if (display.getCurrent() == hardSearch) {
-			// OK (В данном случае эта кнопка отвечает за подключение к
+			// OK (Эта кнопка отвечает за подключение к
 			// устройству)
 			if (c == OKCommand) {
-				btDev = (RemoteDevice) remoteDevicesFounded.elementAt(hardSearch.getSelectedIndex());
-				// hardStatic.append("Всего устройств: " + String.valueOf(bluetoothDevicesFonuded) + ", выбрано № " + String.valueOf(hardSearch.getSelectedIndex()));
+				btDev = (RemoteDevice) remoteDevicesFounded
+						.elementAt(hardSearch.getSelectedIndex());
+				String name;
 				try {
-					hardStatic.append("Соединение с устройством " + btDev.getFriendlyName(false) + " установлено");
+					name = btDev.getFriendlyName(false);
 				} catch (IOException e) {
-					e.printStackTrace();
+					name = btDev.getBluetoothAddress();
 				}
+				hardStatic.deleteAll();
+				hardStatic.append("Соединение с устройством " + name + " установлено");
 				display.setCurrent(hardStatic);
-				hardSearch.deleteAll();
-				hardSearch.removeCommand(repeatCommand);
-				hardSearch.removeCommand(OKCommand);
 				monitor();
 			}
 			// Повтор поиска устройств
 			if (c == repeatCommand) {
-				hardSearch.deleteAll();
 				hardSearchFunction();
 			}
 			// Смена пароля
@@ -411,6 +378,9 @@ public class Client extends MIDlet implements CommandListener{
 		else if (display.getCurrent() == hardStatic) {
 			// Разрыв соединения
 			if (c == breakCommand) {
+				// TODO: завести переменную stop
+				monitorTask.cancel();
+				// TODO: перенести
 				display.setCurrent(hardAbsence);
 			}
 		}
@@ -420,7 +390,6 @@ public class Client extends MIDlet implements CommandListener{
 			// Повторение поиска устройств
 			if (c == refrCommand)
 				hardSearchFunction();
-			hardStatic.deleteAll();
 			if (c == passCommand) {
 				changeForm = true;
 				enterChangePass();
@@ -430,19 +399,19 @@ public class Client extends MIDlet implements CommandListener{
 		else if (display.getCurrent() == passChange) {
 			// OK
 			if (c == OKCommand) {
-				if (changeForm){
+				// TODO: проверять результат смены пароля
 				comparePass();
-				display.setCurrent(hardAbsence);
-			} else{
-				comparePass();
-				display.setCurrent(hardSearch);
-			}
+				if (changeForm) {
+					display.setCurrent(hardAbsence);
+				} else {
+					display.setCurrent(hardSearch);
+				}
 			}
 			// Отмена
 			if (c == cancCommand) {
-				if (changeForm){
+				if (changeForm) {
 					display.setCurrent(hardAbsence);
-				} else{
+				} else {
 					display.setCurrent(hardSearch);
 				}
 			}
@@ -464,18 +433,11 @@ public class Client extends MIDlet implements CommandListener{
 				}
 			}
 		}
-
-		/* Exit */if (c == exitCommand) {
+		// Exit
+		if (c == exitCommand) {
 			destroyApp(true);
 		}
-
-		/*
-		 * if (hardChoise.getSelectedIndex() == 0) { hardName =
-		 * hardChoise.append(); }
-		 */
 	}
-	// Описание команд закончено
-
 }
 // Памятки
 /*

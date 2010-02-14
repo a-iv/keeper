@@ -2,10 +2,10 @@ package blueforms;
 
 import java.util.TimerTask;
 
-public class Task extends TimerTask {
+public class MonitorTask extends TimerTask {
 	Client client;
 
-	public Task(Client client) {
+	public MonitorTask(Client client) {
 		this.client = client;
 	}
 

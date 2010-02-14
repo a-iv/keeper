@@ -34,31 +34,27 @@ public class Search implements DiscoveryListener {
 		}
 		client.hardSearch.addCommand(client.repeatCommand);
 		client.hardSearch.addCommand(client.passCommand);
-		synchronized (this) {
-			try {
-				this.notifyAll();
-			} catch (Exception e) {
-			}
-		}
 	}
 
 	public void servicesDiscovered(int transID, ServiceRecord[] servRecord) {
 		bluetoothSavedFounded = true;
-		// client.hardStatic.append("Сервис найден: " + String.valueOf(servRecord.length));
+		client.hardStatic.append("Найден: " + String.valueOf(servRecord.length));
 		client.agent.cancelServiceSearch(transID);
 	}
 
 	public void serviceSearchCompleted(int transID, int respCode) {
+		//int a = SERVICE_SEARCH_DEVICE_NOT_REACHABLE; 6
 		if (respCode == SERVICE_SEARCH_COMPLETED
-				|| respCode == SERVICE_SEARCH_NO_RECORDS) {
+				|| respCode == SERVICE_SEARCH_NO_RECORDS
+				|| respCode == SERVICE_SEARCH_TERMINATED) {
 		//if (bluetoothSavedFounded) {
-			// client.hardStatic.append("Поиск сервисов окончен: " + String.valueOf(respCode));
+			client.hardStatic.append("Окончен: " + String.valueOf(respCode));
 			client.monitor();
 		} else {
-			// client.hardStatic.append("Сервисов не найдено: " + String.valueOf(respCode));
-			client.display.setCurrent(client.hardAlert);
+			client.hardAlert.append("Не найдено: " + String.valueOf(respCode));
 			client.fail();
 		}
+		// TODO: Убрать синхронизацию
 		synchronized (this) {
 			try {
 				this.notifyAll();
