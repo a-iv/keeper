@@ -27,6 +27,8 @@ public class Client extends MIDlet implements CommandListener {
 	Search listener;
 	Timer monitorTimer = new Timer(); // Переменная таймера для мониторинга
 	MonitorTask monitorTask; // Задание для таймера
+	Timer forceTimer = new Timer();
+	ForceTask forceTask;
 
 	/*
 	 * Интерфейс
@@ -58,7 +60,7 @@ public class Client extends MIDlet implements CommandListener {
 															// устройством
 	StringItem passwordErrorAlert = new StringItem("", "");
 	boolean changeForm;
-	boolean stop;
+	boolean stop = true;
 	byte[] NOTS = { ToneControl.VERSION, 1, ToneControl.TEMPO, 30,
 			ToneControl.BLOCK_START, 0, ToneControl.C4 + 16, 2,
 			ToneControl.C4 + 11, 2, ToneControl.C4 + 16, 2,
@@ -69,6 +71,8 @@ public class Client extends MIDlet implements CommandListener {
 			ToneControl.PLAY_BLOCK, 0 };
 	Player player;
 	boolean isFail;
+	long onlineTime;
+	
 
 	// Обьявление полей ввода
 	TextField enterSetPwd = new TextField("Введите пароль", "", 50,
@@ -188,6 +192,9 @@ public class Client extends MIDlet implements CommandListener {
 			hardSearchFunction();
 		else
 			display.setCurrent(setPwd);
+
+		forceTask = new ForceTask(this);
+		forceTimer.schedule(forceTask, 100, 100);
 	}
 
 	public boolean getPassword() {
@@ -245,29 +252,33 @@ public class Client extends MIDlet implements CommandListener {
 	}
 
 	public void failOn() {
-		isFail = true;
-		display.setCurrent(hardAlert);
-		try {
-			player = Manager.createPlayer(Manager.TONE_DEVICE_LOCATOR);
-			player.realize();
-			ToneControl tcl = (ToneControl) player.getControl("ToneControl");
-			tcl.setSequence(NOTS);
-			player.setLoopCount(-1);
-			player.start();
-		} catch (IOException e) {
-			ShowError(e.toString());
-		} catch (MediaException e) {
-			ShowError(e.toString());
+		if (!isFail){
+			isFail = true;
+			display.setCurrent(hardAlert);
+			try {
+				player = Manager.createPlayer(Manager.TONE_DEVICE_LOCATOR);
+				player.realize();
+				ToneControl tcl = (ToneControl) player.getControl("ToneControl");
+				tcl.setSequence(NOTS);
+				player.setLoopCount(-1);
+				player.start();
+			} catch (IOException e) {
+				ShowError("IO: " + e.toString());
+			} catch (MediaException e) {
+				ShowError("Media: " + e.toString());
+			}
 		}
 	}
 	
 	public void failOff() {
-		isFail = false;
-		display.setCurrent(hardStatic);
-		try {
-			player.stop();
-		} catch (MediaException e) {
-			ShowError(e.toString());
+		if (isFail) {
+			isFail = false;
+			display.setCurrent(hardStatic);
+			try {
+				player.stop();					
+			} catch (MediaException e) {
+				ShowError("Media2: " + e.toString());
+			}
 		}
 	}
 
@@ -352,6 +363,7 @@ public class Client extends MIDlet implements CommandListener {
 				hardStatic.deleteAll();
 				hardStatic.append("Соединение с устройством " + name + " установлено");
 				display.setCurrent(hardStatic);
+				onlineTime = 0;
 				stop = false;
 				monitor();
 			}

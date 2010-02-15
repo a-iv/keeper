@@ -43,20 +43,18 @@ public class Search implements DiscoveryListener {
 	}
 
 	public void serviceSearchCompleted(int transID, int respCode) {
-		//int a = SERVICE_SEARCH_DEVICE_NOT_REACHABLE; 6
+		client.onlineTime = System.currentTimeMillis();
 		if (respCode == SERVICE_SEARCH_COMPLETED
 				|| respCode == SERVICE_SEARCH_NO_RECORDS
 				|| respCode == SERVICE_SEARCH_TERMINATED) {
 		//if (bluetoothSavedFounded) {
-			if (client.isFail) {
-				client.failOff();
-			}
+			client.failOff();
 			client.hardStatic.append("Окончен: " + String.valueOf(respCode));
+			client.hardAlert.append("Окончен: " + String.valueOf(respCode));
 		} else {
+			client.hardStatic.append("Не найдено: " + String.valueOf(respCode));
 			client.hardAlert.append("Не найдено: " + String.valueOf(respCode));
-			if (!client.isFail){
-				client.failOn();
-			}
+			client.failOn();
 		}
 		client.monitor();
 	}
