@@ -69,7 +69,7 @@ public class Client extends MIDlet implements CommandListener {
 			ToneControl.C4 + 11, 2, ToneControl.C4 + 16, 2,
 			ToneControl.C4 + 11, 2, ToneControl.BLOCK_END, 0,
 			ToneControl.PLAY_BLOCK, 0 };
-	Player player;
+	Player player = null;
 	boolean isFail;
 //	long onlineTime;
 	
@@ -166,6 +166,19 @@ public class Client extends MIDlet implements CommandListener {
 		hardAlert.setCommandListener(this);
 
 		isFail = false;
+		
+		try {
+			player = Manager.createPlayer(Manager.TONE_DEVICE_LOCATOR);
+			player.realize();
+			ToneControl tcl = (ToneControl) player.getControl("ToneControl");
+			tcl.setSequence(NOTS);
+			player.setLoopCount(-1);
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		} catch (MediaException e1) {
+			e1.printStackTrace();
+		}
+		
 		// ------------------------------------------------------------------
 
 		try {
@@ -251,8 +264,10 @@ public class Client extends MIDlet implements CommandListener {
 		if (!stop){
 			monitorTask = new MonitorTask(this);
 			monitorTimer.schedule(monitorTask, 100);
-		} else
+		} else {
 			display.setCurrent(hardAbsence);
+			forceTask.cancel();
+		}
 	}
 
 	public void failOn() {
@@ -262,15 +277,8 @@ public class Client extends MIDlet implements CommandListener {
 			isFail = true;
 			display.setCurrent(hardAlert);
 			try {
-				player = Manager.createPlayer(Manager.TONE_DEVICE_LOCATOR);
-				player.realize();
-				ToneControl tcl = (ToneControl) player.getControl("ToneControl");
-				tcl.setSequence(NOTS);
-				player.setLoopCount(-1);
 				player.start();
 				debug(">");
-			} catch (IOException e) {
-				ShowError("IO: " + e.toString());
 			} catch (MediaException e) {
 				ShowError("Media: " + e.toString());
 			}
@@ -285,10 +293,10 @@ public class Client extends MIDlet implements CommandListener {
 			display.setCurrent(hardStatic);
 			try {
 				player.stop();
-				debug("|");
 			} catch (MediaException e) {
-				ShowError("Media2: " + e.toString());
+				e.printStackTrace();
 			}
+			debug("|");
 		}
 	}
 
@@ -392,7 +400,6 @@ public class Client extends MIDlet implements CommandListener {
 			// Разрыв соединения
 			if (c == breakCommand) {
 				stop = true;
-				forceTimer.cancel();
 			}
 		}
 
@@ -431,6 +438,8 @@ public class Client extends MIDlet implements CommandListener {
 		else if (display.getCurrent() == hardAlert) {
 			if (c == OKCommand) {
 				if (enterAlert.getString().equals(password)) {
+					stop = true;
+					forceTask.cancel();
 					failOff();
 					enterAlert.setString("");
 					passwordErrorAlert.setText("");
