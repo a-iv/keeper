@@ -16,6 +16,7 @@ public class Search implements DiscoveryListener {
 	}
 
 	public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {
+		System.out.println("dd");
 		String frendlyNameDevice;
 		try {
 			frendlyNameDevice = btDevice.getFriendlyName(true);
@@ -27,6 +28,7 @@ public class Search implements DiscoveryListener {
 	}
 
 	public void inquiryCompleted(int discType) {
+		System.out.println("ic");
 		if (client.remoteDevicesFounded.isEmpty()) {
 			client.hardSearch.append("Устройств не найдено", null);
 		} else {
@@ -37,23 +39,23 @@ public class Search implements DiscoveryListener {
 	}
 
 	public void servicesDiscovered(int transID, ServiceRecord[] servRecord) {
+		System.out.println("sd");
 		bluetoothSavedFounded = true;
-		client.hardStatic.append("Найден: " + String.valueOf(servRecord.length));
+		client.debug("Найден: " + String.valueOf(servRecord.length));
 		client.agent.cancelServiceSearch(transID);
 	}
 
 	public void serviceSearchCompleted(int transID, int respCode) {
-		client.onlineTime = System.currentTimeMillis();
+		client.debug(String.valueOf(respCode));
+		client.forceTask.cancel();
+		client.debug("c");
 		if (respCode == SERVICE_SEARCH_COMPLETED
 				|| respCode == SERVICE_SEARCH_NO_RECORDS
 				|| respCode == SERVICE_SEARCH_TERMINATED) {
-		//if (bluetoothSavedFounded) {
+			client.forceTask = new ForceTask(client);
+			client.forceTimer.schedule(client.forceTask, 7000);
 			client.failOff();
-			client.hardStatic.append("Окончен: " + String.valueOf(respCode));
-			client.hardAlert.append("Окончен: " + String.valueOf(respCode));
 		} else {
-			client.hardStatic.append("Не найдено: " + String.valueOf(respCode));
-			client.hardAlert.append("Не найдено: " + String.valueOf(respCode));
 			client.failOn();
 		}
 		client.monitor();

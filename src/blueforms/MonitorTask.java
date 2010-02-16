@@ -18,6 +18,7 @@ public class MonitorTask extends TimerTask {
 		UUID[] services = new UUID[1];
 		services[0] = new UUID(0x0000);
 		try {
+			client.debug("e");
 			client.agent.searchServices(args, services, client.btDev, client.listener);
 		} catch (BluetoothStateException e) {
 			client.ShowError("Ошибка при запуске мониторинга");

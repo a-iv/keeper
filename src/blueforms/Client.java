@@ -28,7 +28,7 @@ public class Client extends MIDlet implements CommandListener {
 	Timer monitorTimer = new Timer(); // Переменная таймера для мониторинга
 	MonitorTask monitorTask; // Задание для таймера
 	Timer forceTimer = new Timer();
-	ForceTask forceTask;
+	ForceTask forceTask = new ForceTask(this);
 
 	/*
 	 * Интерфейс
@@ -71,7 +71,7 @@ public class Client extends MIDlet implements CommandListener {
 			ToneControl.PLAY_BLOCK, 0 };
 	Player player;
 	boolean isFail;
-	long onlineTime;
+//	long onlineTime;
 	
 
 	// Обьявление полей ввода
@@ -97,6 +97,11 @@ public class Client extends MIDlet implements CommandListener {
 	Command breakCommand = new Command("Разорвать", Command.CANCEL, 2);
 	Command passCommand = new Command("Смена пароля", Command.BACK, 2);
 	Command cancCommand = new Command("Отмена", Command.CANCEL, 2);
+	
+	public void debug(String text) {
+//		hardStatic.append(text);
+//		hardAlert.append(text);
+	}
 
 	protected void destroyApp(boolean arg0) {
 		// Закрываем RecordStore
@@ -192,9 +197,6 @@ public class Client extends MIDlet implements CommandListener {
 			hardSearchFunction();
 		else
 			display.setCurrent(setPwd);
-
-		forceTask = new ForceTask(this);
-		forceTimer.schedule(forceTask, 100, 100);
 	}
 
 	public boolean getPassword() {
@@ -230,6 +232,7 @@ public class Client extends MIDlet implements CommandListener {
 	 * Функция, описывающая поиск устройств
 	 */
 	public void hardSearchFunction() {
+		System.out.println("hardSearchFunction");
 		hardSearch.deleteAll();
 		hardSearch.removeCommand(repeatCommand);
 		hardSearch.removeCommand(passCommand);
@@ -244,6 +247,7 @@ public class Client extends MIDlet implements CommandListener {
 	}
 
 	public void monitor() {
+		debug("m");
 		if (!stop){
 			monitorTask = new MonitorTask(this);
 			monitorTimer.schedule(monitorTask, 100);
@@ -252,7 +256,9 @@ public class Client extends MIDlet implements CommandListener {
 	}
 
 	public void failOn() {
+		debug("+");
 		if (!isFail){
+			debug("!");
 			isFail = true;
 			display.setCurrent(hardAlert);
 			try {
@@ -262,6 +268,7 @@ public class Client extends MIDlet implements CommandListener {
 				tcl.setSequence(NOTS);
 				player.setLoopCount(-1);
 				player.start();
+				debug(">");
 			} catch (IOException e) {
 				ShowError("IO: " + e.toString());
 			} catch (MediaException e) {
@@ -271,11 +278,14 @@ public class Client extends MIDlet implements CommandListener {
 	}
 	
 	public void failOff() {
+		debug("-");
 		if (isFail) {
+			debug("!");
 			isFail = false;
 			display.setCurrent(hardStatic);
 			try {
-				player.stop();					
+				player.stop();
+				debug("|");
 			} catch (MediaException e) {
 				ShowError("Media2: " + e.toString());
 			}
@@ -363,7 +373,7 @@ public class Client extends MIDlet implements CommandListener {
 				hardStatic.deleteAll();
 				hardStatic.append("Соединение с устройством " + name + " установлено");
 				display.setCurrent(hardStatic);
-				onlineTime = 0;
+				//onlineTime = 0;
 				stop = false;
 				monitor();
 			}
@@ -382,6 +392,7 @@ public class Client extends MIDlet implements CommandListener {
 			// Разрыв соединения
 			if (c == breakCommand) {
 				stop = true;
+				forceTimer.cancel();
 			}
 		}
 
