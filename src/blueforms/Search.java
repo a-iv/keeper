@@ -46,19 +46,21 @@ public class Search implements DiscoveryListener {
 	}
 
 	public void serviceSearchCompleted(int transID, int respCode) {
-		client.debug(String.valueOf(respCode));
-		client.forceTask.cancel();
-		client.debug("c");
-		if (respCode == SERVICE_SEARCH_COMPLETED
-				|| respCode == SERVICE_SEARCH_NO_RECORDS
-				|| respCode == SERVICE_SEARCH_TERMINATED) {
-			client.forceTask = new ForceTask(client);
-			client.forceTimer.schedule(client.forceTask, 7000);
-			client.failOff();
-		} else {
-			client.failOn();
+		if (client.curState != 0) {
+			client.debug(String.valueOf(respCode));
+			client.forceTask.cancel();
+			client.debug("c");
+			if (respCode == SERVICE_SEARCH_COMPLETED
+					|| respCode == SERVICE_SEARCH_NO_RECORDS
+					|| respCode == SERVICE_SEARCH_TERMINATED) {
+				client.forceTask = new ForceTask(client);
+				client.forceTimer.schedule(client.forceTask, 5000);
+				client.setState(1);
+			} else {
+				client.setState(2);
+			}
+			client.monitor();
 		}
-		client.monitor();
 	}
 }
 

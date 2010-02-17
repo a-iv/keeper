@@ -56,11 +56,10 @@ public class Client extends MIDlet implements CommandListener {
 	// неправильном вводе
 	// пароля(setPwd)
 	StringItem hardStaticMessage = new StringItem("", ""); // Сообщение при
-															// соединении с
-															// устройством
+	// соединении с
+	// устройством
 	StringItem passwordErrorAlert = new StringItem("", "");
 	boolean changeForm;
-	boolean stop = true;
 	byte[] NOTS = { ToneControl.VERSION, 1, ToneControl.TEMPO, 30,
 			ToneControl.BLOCK_START, 0, ToneControl.C4 + 16, 2,
 			ToneControl.C4 + 11, 2, ToneControl.C4 + 16, 2,
@@ -70,9 +69,8 @@ public class Client extends MIDlet implements CommandListener {
 			ToneControl.C4 + 11, 2, ToneControl.BLOCK_END, 0,
 			ToneControl.PLAY_BLOCK, 0 };
 	Player player = null;
-	boolean isFail;
-//	long onlineTime;
-	
+	int curState = 0;
+	// long onlineTime;
 
 	// Обьявление полей ввода
 	TextField enterSetPwd = new TextField("Введите пароль", "", 50,
@@ -97,10 +95,10 @@ public class Client extends MIDlet implements CommandListener {
 	Command breakCommand = new Command("Разорвать", Command.CANCEL, 2);
 	Command passCommand = new Command("Смена пароля", Command.BACK, 2);
 	Command cancCommand = new Command("Отмена", Command.CANCEL, 2);
-	
+
 	public void debug(String text) {
-//		hardStatic.append(text);
-//		hardAlert.append(text);
+		// hardStatic.append(text);
+		// hardAlert.append(text);
 	}
 
 	protected void destroyApp(boolean arg0) {
@@ -165,8 +163,6 @@ public class Client extends MIDlet implements CommandListener {
 		hardAlert.addCommand(OKCommand);
 		hardAlert.setCommandListener(this);
 
-		isFail = false;
-		
 		try {
 			player = Manager.createPlayer(Manager.TONE_DEVICE_LOCATOR);
 			player.realize();
@@ -178,7 +174,7 @@ public class Client extends MIDlet implements CommandListener {
 		} catch (MediaException e1) {
 			e1.printStackTrace();
 		}
-		
+
 		// ------------------------------------------------------------------
 
 		try {
@@ -259,22 +255,19 @@ public class Client extends MIDlet implements CommandListener {
 		}
 	}
 
-	public void monitor() {
-		debug("m");
-		if (!stop){
-			monitorTask = new MonitorTask(this);
-			monitorTimer.schedule(monitorTask, 100);
-		} else {
-			display.setCurrent(hardAbsence);
-			forceTask.cancel();
+	public void setState(int state) {
+		if (curState == 0 && state == 1) {
+			curState = state;
+			monitor();
 		}
-	}
-
-	public void failOn() {
-		debug("+");
-		if (!isFail){
+		if (curState == 1 && state == 0) {
+			curState = state;
+			display.setCurrent(hardAbsence);
+		}
+		if (curState != 2 && state == 2) {
+			curState = state;
+			debug("+");
 			debug("!");
-			isFail = true;
 			display.setCurrent(hardAlert);
 			try {
 				player.start();
@@ -283,20 +276,28 @@ public class Client extends MIDlet implements CommandListener {
 				ShowError("Media: " + e.toString());
 			}
 		}
-	}
-	
-	public void failOff() {
-		debug("-");
-		if (isFail) {
+		if (curState == 2 && state != 2) {
+			curState = state;
 			debug("!");
-			isFail = false;
-			display.setCurrent(hardStatic);
+			if (state == 1) {
+				display.setCurrent(hardStatic);
+			} else if (state == 0) {
+				display.setCurrent(hardAbsence);
+			}
 			try {
 				player.stop();
 			} catch (MediaException e) {
 				e.printStackTrace();
 			}
 			debug("|");
+		}
+	}
+
+	public void monitor() {
+		debug("m");
+		if (curState == 1 || curState == 2) {
+			monitorTask = new MonitorTask(this);
+			monitorTimer.schedule(monitorTask, 100);
 		}
 	}
 
@@ -379,11 +380,10 @@ public class Client extends MIDlet implements CommandListener {
 					name = btDev.getBluetoothAddress();
 				}
 				hardStatic.deleteAll();
-				hardStatic.append("Соединение с устройством " + name + " установлено");
+				hardStatic.append("Соединение с устройством " + name
+						+ " установлено");
 				display.setCurrent(hardStatic);
-				//onlineTime = 0;
-				stop = false;
-				monitor();
+				setState(1);
 			}
 			// Повтор поиска устройств
 			if (c == repeatCommand) {
@@ -399,7 +399,7 @@ public class Client extends MIDlet implements CommandListener {
 		else if (display.getCurrent() == hardStatic) {
 			// Разрыв соединения
 			if (c == breakCommand) {
-				stop = true;
+				setState(0);
 			}
 		}
 
@@ -438,12 +438,9 @@ public class Client extends MIDlet implements CommandListener {
 		else if (display.getCurrent() == hardAlert) {
 			if (c == OKCommand) {
 				if (enterAlert.getString().equals(password)) {
-					stop = true;
-					forceTask.cancel();
-					failOff();
+					setState(0);
 					enterAlert.setString("");
 					passwordErrorAlert.setText("");
-					display.setCurrent(hardAbsence);
 				} else {
 					passwordErrorAlert.setText("Неверный пароль");
 				}

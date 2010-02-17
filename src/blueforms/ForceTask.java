@@ -10,7 +10,9 @@ public class ForceTask extends TimerTask {
 	}
 
 	public void run() {
-		client.debug("f");
-		client.failOn();
+		if (client.curState == 1) {
+			client.debug("f");
+			client.setState(2);
+		}
 	}
 }
